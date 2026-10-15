@@ -1,0 +1,33 @@
+[package]
+name = "ch10_generics_traits"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_generics"
+path = "ex01_generics.rs"
+
+[[test]]
+name = "ex02_summary"
+path = "ex02_summary.rs"
+
+[[test]]
+name = "ex03_bounds"
+path = "ex03_bounds.rs"
+
+[[test]]
+name = "ex04_lifetimes"
+path = "ex04_lifetimes.rs"
+
+[[test]]
+name = "ex05_tokenizer"
+path = "ex05_tokenizer.rs"
+
+[[test]]
+name = "ex06_describe"
+path = "ex06_describe.rs"

@@ -1,0 +1,26 @@
+[package]
+name = "minigrep"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[[test]]
+name = "stage1_config"
+path = "stages/stage1_config.rs"
+
+[[test]]
+name = "stage2_search"
+path = "stages/stage2_search.rs"
+
+[[test]]
+name = "stage3_run"
+path = "stages/stage3_run.rs"
+
+[[test]]
+name = "stage4_case_insensitive"
+path = "stages/stage4_case_insensitive.rs"
+
+[[test]]
+name = "stage5_iterators"
+path = "stages/stage5_iterators.rs"

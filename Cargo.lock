@@ -135,6 +135,22 @@ name = "ch08_collections"
 version = "0.1.0"
 
 [[package]]
+name = "ch09_errors"
+version = "0.1.0"
+
+[[package]]
+name = "ch10_generics_traits"
+version = "0.1.0"
+
+[[package]]
+name = "ch11_testing"
+version = "0.1.0"
+
+[[package]]
+name = "ch13_closures_iterators"
+version = "0.1.0"
+
+[[package]]
 name = "core-foundation"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -674,6 +690,10 @@ dependencies = [
  "mime",
  "unicase",
 ]
+
+[[package]]
+name = "minigrep"
+version = "0.1.0"
 
 [[package]]
 name = "mio"

@@ -1,0 +1,29 @@
+[package]
+name = "ch11_testing"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_assertions"
+path = "ex01_assertions.rs"
+
+[[test]]
+name = "ex02_should_panic"
+path = "ex02_should_panic.rs"
+
+[[test]]
+name = "ex03_result_tests"
+path = "ex03_result_tests.rs"
+
+[[test]]
+name = "ex04_write_tests"
+path = "ex04_write_tests.rs"
+
+[[test]]
+name = "ex05_test_module"
+path = "ex05_test_module.rs"

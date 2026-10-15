@@ -1,0 +1,29 @@
+[package]
+name = "ch13_closures_iterators"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_closures"
+path = "ex01_closures.rs"
+
+[[test]]
+name = "ex02_adaptors"
+path = "ex02_adaptors.rs"
+
+[[test]]
+name = "ex03_counter"
+path = "ex03_counter.rs"
+
+[[test]]
+name = "ex04_refactor"
+path = "ex04_refactor.rs"
+
+[[test]]
+name = "ex05_loot"
+path = "ex05_loot.rs"

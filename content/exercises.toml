@@ -708,3 +708,506 @@ hints = [
   "`ranked`: copy the map into a `Vec<(String, u32)>`, then `entries.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));`. Comparing `b` to `a` on the count gives descending order; `.then(...)` breaks ties.",
   "`favourite`: `ranked(&count_pickups(log)).into_iter().next()`. An empty log has no entries, so that is `None` for free.",
 ]
+
+# ---------------------------------------------------------------------------
+# Chapter 9: Error Handling
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch09/ex01"
+crate = "ch09_errors"
+target = "ex01_propagate"
+title = "Propagate, don't panic"
+kind = "fix"
+xp = 35
+description = """
+Three functions already return `Result` but `unwrap()` inside, so bad
+input panics instead of reaching the caller. Replace each `unwrap` with
+`?`, using `ok_or` for the `Option` and `map_err` where the error type
+differs. No `unwrap()` or `expect(` may remain.
+"""
+hints = [
+  "`read_number`: `let n = s.trim().parse()?;`. The error type (`ParseIntError`) already matches the function's.",
+  "`sum_lines`: `total += read_number(line)?;` returns the first error.",
+  "`first_line_number`: `text.lines().next()` is an `Option`; `.ok_or(String::from(\"empty input\"))?` turns `None` into the error. Then `read_number(line).map_err(|e| e.to_string())?` converts the `ParseIntError` to a `String`.",
+]
+requires = { must_not_contain = ["unwrap()", "expect("] }
+
+[[exercise]]
+id = "ch09/ex02"
+crate = "ch09_errors"
+target = "ex02_parse_pairs"
+title = "Result with a String error"
+kind = "implement"
+xp = 40
+description = """
+Parse `"x,y"` pairs with descriptive `String` errors, then compose that
+parser with `?` inside loops. Match the error texts exactly.
+"""
+hints = [
+  "`s.split_once(',')` gives `Option<(&str, &str)>`. With `let else`, return `Err(format!(\"missing comma in '{s}'\"))` when it is `None`.",
+  "A small helper `fn parse_part(part: &str) -> Result<i32, String>` that trims and does `part.parse().map_err(|_| format!(\"bad number '{part}'\"))` keeps `parse_pair` short: `let x = parse_part(left)?;`.",
+  "`parse_pairs`: skip lines where `line.trim().is_empty()`, push `parse_pair(line)?`. `sum_pairs`: `for (x, y) in parse_pairs(text)? { ... }`.",
+]
+
+[[exercise]]
+id = "ch09/ex03"
+crate = "ch09_errors"
+target = "ex03_config_error"
+title = "A custom error type"
+kind = "implement"
+xp = 45
+description = """
+An error enum with three variants, `Display` already written. Add the
+`From<ParseIntError>` impl so `?` can convert, then write `parse_config`
+using `?`, `let else` and `ok_or`.
+"""
+hints = [
+  "`impl From<ParseIntError> for ConfigError { fn from(e: ParseIntError) -> Self { ConfigError::BadNumber(e) } }`.",
+  "`parse_config`: keep `let mut width = None; let mut height = None;`. For each non-blank line, `let Some((key, value)) = line.split_once('=') else { return Err(ConfigError::Malformed(line.to_string())); };`.",
+  "`match key.trim() { \"width\" => width = Some(value.trim().parse()?), \"height\" => ..., _ => {} }`. The `?` calls your `From` impl.",
+  "After the loop: `let width = width.ok_or(ConfigError::Missing(String::from(\"width\")))?;` and the same for height, then `Ok(Config { width, height })`.",
+]
+
+[[exercise]]
+id = "ch09/ex04"
+crate = "ch09_errors"
+target = "ex04_save_file"
+title = "Loading save slots"
+kind = "implement"
+xp = 50
+description = """
+Parse `name=Samus;hp=99;level=3` lines into `SaveSlot`s with a typed
+`SaveError`, then write a loader that returns `Box<dyn Error>` so any
+failure can be printed by the caller.
+"""
+hints = [
+  "`parse_slot`: `for piece in line.split(';')`, then `let Some((key, value)) = piece.split_once('=') else { return Err(SaveError::Malformed(piece.to_string())); };`.",
+  "Keep three `Option`s (`name`, `hp`, `level`) and fill them in a `match key.trim()`. For the numbers, `value.trim().parse()?` works because `From<ParseIntError>` is implemented.",
+  "Build the slot with `name: name.ok_or(SaveError::MissingField(\"name\"))?` and the same for `hp` and `level`, in that order (the tests expect `name` to be reported before `hp`).",
+  "`load_slots`: skip blank lines, `slots.push(parse_slot(line)?)`. A `SaveError` converts to `Box<dyn Error>` automatically because it implements `Error`.",
+]
+
+[[exercise]]
+id = "ch09/ex05"
+crate = "ch09_errors"
+target = "ex05_choose_wisely"
+title = "Choosing the right tool"
+kind = "fix"
+xp = 35
+description = """
+Three functions, three wrong choices: a panic where a default belongs, a
+bare `unwrap` where a documented `expect` belongs, and a swallowed error
+where `?` belongs.
+"""
+hints = [
+  "`port_from_setting`: `setting.and_then(|s| s.parse().ok()).unwrap_or(8080)`. `and_then` chains the `Option`, `.ok()` turns the parse `Result` into an `Option`, and `unwrap_or` supplies the default.",
+  "`default_map`: `embedded.expect(\"built-in default map is missing\")`. The `should_panic(expected = ...)` test checks the message.",
+  "`total`: `sum += v.parse::<u32>()?;` so a bad value becomes the function's `Err`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 10: Generics, Traits and Lifetimes
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch10/ex01"
+crate = "ch10_generics_traits"
+target = "ex01_generics"
+title = "Generic functions and structs"
+kind = "implement"
+xp = 40
+description = """
+`largest` for any comparable type, a generic `Point<T>` with one
+`f64`-only method, and the book's `mixup` on a two-parameter `Pair`. The
+compiler will tell you which bounds the bodies need.
+"""
+hints = [
+  "`largest`: `<T: PartialOrd>`. `list.first()?` gives the first element or returns `None`; then the usual loop with `if item > largest`.",
+  "`largest_copy`: `<T: PartialOrd + Copy>`, and `largest(list).copied()` turns `Option<&T>` into `Option<T>`.",
+  "`distance_from_origin`: `(self.x.powi(2) + self.y.powi(2)).sqrt()`; this `impl Point<f64>` block has no `<T>` because it is only for `f64`.",
+  "`mixup`: `Pair { first: self.first, second: other.second }`. Both arguments are consumed, so moving the fields out is fine.",
+]
+
+[[exercise]]
+id = "ch10/ex02"
+crate = "ch10_generics_traits"
+target = "ex02_summary"
+title = "Defining and implementing a trait"
+kind = "implement"
+xp = 40
+description = """
+The book's `Summary` trait: implement it for `Tweet` (keeping the default
+`summarize`) and `NewsArticle` (overriding it), then use it through
+`impl Summary` and a generic bound.
+"""
+hints = [
+  "`impl Summary for Tweet { fn summarize_author(&self) -> String { format!(\"@{}\", self.username) } }`. Nothing else: the default `summarize` applies.",
+  "For `NewsArticle`, provide both methods; `summarize` is `format!(\"{}, by {}\", self.headline, self.author)`.",
+  "`notify`: `format!(\"Breaking news! {}\", item.summarize())`. `summarize_all`: loop and push `item.summarize()`.",
+]
+
+[[exercise]]
+id = "ch10/ex03"
+crate = "ch10_generics_traits"
+target = "ex03_bounds"
+title = "Bounds the body needs"
+kind = "fix"
+xp = 35
+description = """
+Two generic functions use methods their type parameter never promised,
+and one function returns two different types behind `impl Shape`. Fix
+the signatures (and that one body).
+"""
+hints = [
+  "`join_all` calls `to_string()`, which comes from `Display`: `fn join_all<T: Display>(...)`. `Display` is already imported.",
+  "`max_of` uses `>`: `fn max_of<T: PartialOrd>(a: T, b: T) -> T`.",
+  "`unit_shape` cannot return a `Circle` in one branch and a `Square` in the other. Both tests expect area 1.0, so return `Square(1.0)` regardless of the flag (rename the parameter `_round` to silence the warning).",
+]
+
+[[exercise]]
+id = "ch10/ex04"
+crate = "ch10_generics_traits"
+target = "ex04_lifetimes"
+title = "Lifetime annotations"
+kind = "fix"
+xp = 40
+description = """
+Three `missing lifetime specifier` errors: the book's `longest`, a
+function whose result borrows only from its first argument, and a struct
+holding a `&str`. Annotate precisely.
+"""
+hints = [
+  "`longest<'a>(x: &'a str, y: &'a str) -> &'a str`: the result may come from either, so both share `'a`.",
+  "`pick_first<'a>(x: &'a str, y: &str) -> &'a str`: only `x` gets `'a`. If you also gave `y` the lifetime `'a`, the second test would fail to compile because `b` is dropped before `result` is used.",
+  "`struct Excerpt<'a> { part: &'a str }`, `impl<'a> Excerpt<'a>`, and `fn new(text: &'a str) -> Excerpt<'a>`. The `part(&self) -> &str` method is fine as written thanks to elision.",
+]
+
+[[exercise]]
+id = "ch10/ex05"
+crate = "ch10_generics_traits"
+target = "ex05_tokenizer"
+title = "A borrowing tokenizer"
+kind = "implement"
+xp = 50
+description = """
+A struct that borrows its input and hands out slices of it. The subtle
+part is the return type of `next_token`: tie the slices to the input's
+lifetime, not to the `&mut self` borrow.
+"""
+hints = [
+  "`struct Tokenizer<'a> { input: &'a str, pos: usize }` and `impl<'a> Tokenizer<'a>`, with `fn new(input: &'a str) -> Tokenizer<'a>`.",
+  "`fn next_token(&mut self) -> Option<&'a str>`. With plain `-> Option<&str>`, elision would borrow from `self`, and the last two tests would not compile.",
+  "Body: `let rest = &self.input[self.pos..]; let trimmed = rest.trim_start();` If `trimmed` is empty, set `pos` to the end and return `None`. Otherwise the token starts at `self.pos + (rest.len() - trimmed.len())` and its length is `trimmed.find(char::is_whitespace).unwrap_or(trimmed.len())`. Advance `pos` and return the slice of `self.input`.",
+  "`rest(&self) -> &'a str` is just `&self.input[self.pos..]`.",
+]
+
+[[exercise]]
+id = "ch10/ex06"
+crate = "ch10_generics_traits"
+target = "ex06_describe"
+title = "Describing game objects"
+kind = "implement"
+xp = 45
+description = """
+Two traits, two types, and generic functions with one bound and with two
+bounds in a `where` clause.
+"""
+hints = [
+  "`impl Describe for Enemy`: `name` returns `self.species.clone()`, `kind` returns `\"enemy\"`. `impl Combatant for Enemy` returns `self.hp`.",
+  "`impl Describe for Pickup`: `name` is `format!(\"{}x {}\", self.amount, self.item)`.",
+  "`toughest<T>(items: &[T]) -> Option<String> where T: Describe + Combatant`. Track the best `&T` by `hp()` in a loop, then `best.map(|b| b.describe())`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 11: Writing Automated Tests
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch11/ex01"
+crate = "ch11_testing"
+target = "ex01_assertions"
+title = "Fix the tests, not the code"
+kind = "fix"
+xp = 30
+description = """
+The three functions are right; the three tests are wrong. One does not
+even compile (a format message with no argument). Read the failures and
+correct the assertions.
+"""
+hints = [
+  "`add(2, 2)` is 4, not 5. The runner prints `left` and `right` so you can see which side is wrong.",
+  "3 is odd and 4 is even: swap the `!`s in `evenness`.",
+  "The custom message has a `{}` but no argument. Write `{result}` (inline capture) or pass `result` after the format string. And since `greet(\"Carol\")` really is `\"Hello, Carol!\"`, the last line wants `assert_eq!`, not `assert_ne!`.",
+]
+
+[[exercise]]
+id = "ch11/ex02"
+crate = "ch11_testing"
+target = "ex02_should_panic"
+title = "Panics the tests expect"
+kind = "implement"
+xp = 30
+description = """
+Implement the book's `Guess::new` so that four tests pass, three of them
+`should_panic` with specific expected messages.
+"""
+hints = [
+  "Two `if` branches, each with its own `panic!`. The messages must contain the `expected` text exactly, including the value and the final full stop.",
+  "`panic!(\"Guess value must be greater than or equal to 1, got {value}.\")` for `value < 1`, and the matching `less than or equal to 100` message for `value > 100`.",
+]
+
+[[exercise]]
+id = "ch11/ex03"
+crate = "ch11_testing"
+target = "ex03_result_tests"
+title = "Tests that return Result"
+kind = "implement"
+xp = 35
+description = """
+Implement a version parser whose tests use `?`, then add one more
+`Result`-returning test named `parses_zero`. The checker counts five
+tests in the file.
+"""
+hints = [
+  "`let parts: Vec<&str> = s.split('.').collect();` then check `parts.len() != 3` and return the `expected 3 parts, got {}` error.",
+  "Parse each part with `part.parse().map_err(|_| format!(\"bad number '{part}'\"))?`.",
+  "The new test: `#[test] fn parses_zero() -> Result<(), String> { assert_eq!(parse_version(\"0.0.0\")?, (0, 0, 0)); Ok(()) }`.",
+]
+requires = { min_tests = 5 }
+
+[[exercise]]
+id = "ch11/ex04"
+crate = "ch11_testing"
+target = "ex04_write_tests"
+title = "Write the tests yourself"
+kind = "write"
+xp = 45
+description = """
+No tests exist. Write at least four for `clamp_hp` and `level_for_xp`,
+including one `should_panic` test with an `expected` message. The checker
+counts `#[test]` attributes and looks for `should_panic`.
+"""
+hints = [
+  "A test is just `#[test] fn name() { assert_eq!(clamp_hp(50, 100), 50); }` placed anywhere in this file.",
+  "Edges: `clamp_hp(-20, 100)` should be 0 and `clamp_hp(999, 100)` should be 100. For levels, check 99 and 100, 299 and 300, 599 and 600.",
+  "`#[test] #[should_panic(expected = \"max hp must be positive\")] fn zero_max() { clamp_hp(10, 0); }`.",
+]
+requires = { min_tests = 4, must_contain = ["should_panic"] }
+
+[[exercise]]
+id = "ch11/ex05"
+crate = "ch11_testing"
+target = "ex05_test_module"
+title = "The tests module"
+kind = "fix"
+xp = 30
+description = """
+A `#[cfg(test)] mod tests` that cannot see its parent, a helper that is
+private to a sibling module, and a test with a parameter. Three compile
+errors; fix them without changing what is asserted.
+"""
+hints = [
+  "Add `use super::*;` as the first line inside `mod tests`.",
+  "`helpers::double` is private to `helpers`. The tests module is a sibling, not a child, so it needs `pub fn double`.",
+  "Test functions take no arguments. Turn `extra` into a local: `let extra = 5;`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 12: minigrep (projects/minigrep)
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch12/stage1"
+crate = "minigrep"
+target = "stage1_config"
+title = "Stage 1: Config::build"
+kind = "project"
+xp = 30
+file = "projects/minigrep/src/lib.rs"
+solution = "solutions/minigrep/src/lib.rs"
+description = """
+Implement `Config::build_with` in `projects/minigrep/src/lib.rs`: check the
+argument count, clone the query and file path out of the slice, and return
+`Err("not enough arguments")` when there are too few. `build` already
+delegates to it.
+"""
+hints = [
+  "`if args.len() < 3 { return Err(\"not enough arguments\"); }`: the program path, the query and the file path make three.",
+  "`let query = args[1].clone(); let file_path = args[2].clone();` then `Ok(Config { query, file_path, ignore_case })`.",
+]
+
+[[exercise]]
+id = "ch12/stage2"
+crate = "minigrep"
+target = "stage2_search"
+title = "Stage 2: search, test-first"
+kind = "project"
+xp = 35
+file = "projects/minigrep/src/lib.rs"
+solution = "solutions/minigrep/src/lib.rs"
+description = """
+Implement `search`: every line of `contents` that contains `query`. The
+signature's lifetime says the results borrow from `contents`.
+"""
+hints = [
+  "`let mut results = Vec::new(); for line in contents.lines() { if line.contains(query) { results.push(line); } } results`.",
+  "Or, looking ahead to chapter 13: `contents.lines().filter(|line| line.contains(query)).collect()`.",
+]
+
+[[exercise]]
+id = "ch12/stage3"
+crate = "minigrep"
+target = "stage3_run"
+title = "Stage 3: run"
+kind = "project"
+xp = 35
+file = "projects/minigrep/src/lib.rs"
+solution = "solutions/minigrep/src/lib.rs"
+description = """
+Implement `run`: read the file named in the config with `fs::read_to_string`
+(propagating the error with `?`), search it, and return the matching lines
+as owned `String`s.
+"""
+hints = [
+  "`let contents = fs::read_to_string(&config.file_path)?;`. The `?` turns an `io::Error` into the `Box<dyn Error>` the signature promises.",
+  "`search(&config.query, &contents)` gives `Vec<&str>`; convert with `.into_iter().map(String::from).collect()` or a loop pushing `line.to_string()`. (Leave `ignore_case` for the next stage.)",
+]
+
+[[exercise]]
+id = "ch12/stage4"
+crate = "minigrep"
+target = "stage4_case_insensitive"
+title = "Stage 4: ignoring case"
+kind = "project"
+xp = 35
+file = "projects/minigrep/src/lib.rs"
+solution = "solutions/minigrep/src/lib.rs"
+description = """
+Implement `search_case_insensitive` and make `run` choose between the two
+searches based on `config.ignore_case`. Then try it for real:
+`cargo run -p minigrep -- FROG projects/minigrep/poem.txt` with and without
+`IGNORE_CASE` set.
+"""
+hints = [
+  "`let query = query.to_lowercase();` makes an owned `String`, so inside the loop compare `line.to_lowercase().contains(&query)` (note the `&`).",
+  "In `run`: `let results = if config.ignore_case { search_case_insensitive(&config.query, &contents) } else { search(&config.query, &contents) };`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 13: Closures and Iterators
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch13/ex01"
+crate = "ch13_closures_iterators"
+target = "ex01_closures"
+title = "Capturing correctly"
+kind = "fix"
+xp = 35
+description = """
+A returned closure that borrows a dying local, a bound too strict for a
+mutating closure, and a closure whose borrow overlaps a `push`. Three
+compile errors.
+"""
+hints = [
+  "`adder` returns the closure, so it must own `n`: `move |x| x + n`.",
+  "The test passes a closure that does `total += v`, which needs `FnMut`. Change the bound to `F: FnMut(i32)` and the parameter to `mut f: F`.",
+  "`render` borrows `list` until its last call. Call it *before* `list.push(99)` and keep the result.",
+]
+
+[[exercise]]
+id = "ch13/ex02"
+crate = "ch13_closures_iterators"
+target = "ex02_adaptors"
+title = "Iterator adaptors"
+kind = "implement"
+xp = 45
+description = """
+Five functions, five iterator chains: `filter`/`map`/`collect`,
+`map`/`sum`, a fold for the longest word, `position`, and
+`enumerate`/`map`/`join`. No `for` or `while` loops.
+"""
+hints = [
+  "`squares_of_evens`: `values.iter().filter(|&&v| v % 2 == 0).map(|v| v * v).collect()`.",
+  "`total_len`: `words.iter().map(|w| w.len()).sum()`. The return type tells `sum` what to produce.",
+  "`longest_word`: `text.split_whitespace().fold(None, |best, word| ...)` keeping `best` unless `word` is strictly longer. (`max_by_key` would return the *last* of equal-length words.)",
+  "`first_negative_index`: `values.iter().position(|&v| v < 0)`. `numbered_upper`: `.enumerate().map(|(i, w)| format!(\"{}:{}\", i + 1, w.to_uppercase())).collect::<Vec<_>>().join(\", \")`.",
+]
+requires = { must_not_contain = ["for ", "while "] }
+
+[[exercise]]
+id = "ch13/ex03"
+crate = "ch13_closures_iterators"
+target = "ex03_counter"
+title = "Implementing Iterator"
+kind = "implement"
+xp = 40
+description = """
+Implement `Iterator` for the book's `Counter` and for an infinite
+Fibonacci sequence. Once `next` exists, `zip`, `skip`, `map`, `filter`,
+`sum`, `take` and `find` all work.
+"""
+hints = [
+  "`impl Iterator for Counter { type Item = u32; fn next(&mut self) -> Option<u32> { if self.count < 5 { self.count += 1; Some(self.count) } else { None } } }`.",
+  "`Fib::next`: remember `self.current`, shift `self.current = self.next`, add the old value into `self.next`, and return `Some(old)`. It never returns `None`; `take` and `find` stop it.",
+]
+
+[[exercise]]
+id = "ch13/ex04"
+crate = "ch13_closures_iterators"
+target = "ex04_refactor"
+title = "Loops to iterators"
+kind = "implement"
+xp = 45
+description = """
+The tests already pass. Rewrite every body as an iterator chain with the
+same behaviour; the checker rejects `for` and `while` in this file.
+"""
+hints = [
+  "`count_matching`: `.filter(|&&w| w == needle).count()`. `all_positive`: `.all(|&v| v > 0)`.",
+  "`max_abs`: `values.iter().map(|v| v.abs()).max()` already returns `Option<i32>` and `None` for empty input.",
+  "`running_total`: `.scan(0, |sum, &v| { *sum += v; Some(*sum) }).collect()`. `pairs`: `values.windows(2).map(|w| (w[0], w[1])).collect()`.",
+]
+requires = { must_not_contain = ["for ", "while "] }
+
+[[exercise]]
+id = "ch13/ex05"
+crate = "ch13_closures_iterators"
+target = "ex05_loot"
+title = "Loot pipelines"
+kind = "implement"
+xp = 50
+description = """
+Iterator chains over a slice of `Item` structs: filter by rarity, sum a
+field, find the most valuable, zip with prices, and pack items while a
+running weight fits. No loops.
+"""
+hints = [
+  "`rare_names`: `.filter(|i| i.rarity >= Rarity::Rare).map(|i| i.name.as_str()).collect()`. `PartialOrd` on the enum orders variants by declaration.",
+  "`most_valuable`: `max_by_key` returns the *last* maximum, so `items.iter().rev().max_by_key(|i| i.value)` makes the first one win ties.",
+  "`with_prices`: `items.iter().zip(prices.iter()).map(|(i, &p)| (i.name.as_str(), p)).collect()`. `zip` stops at the shorter side.",
+  "`pack`: `.scan(0, |carried, i| { *carried += i.weight; Some((*carried, i)) }).take_while(|(c, _)| *c <= capacity).map(|(_, i)| i).collect()`.",
+]
+requires = { must_not_contain = ["for ", "while "] }
+
+[[exercise]]
+id = "ch13/ex06"
+crate = "minigrep"
+target = "stage5_iterators"
+title = "minigrep stage 5: Config from an iterator"
+kind = "project"
+xp = 35
+file = "projects/minigrep/src/lib.rs"
+solution = "solutions/minigrep/src/lib.rs"
+description = """
+Back in `projects/minigrep/src/lib.rs`: implement `Config::build_from_iter`
+with `next()` calls instead of slice indexing and cloning, as in chapter
+13.4. If your `search` still uses a loop, rewrite it as
+`lines().filter(...).collect()` while you are there.
+"""
+hints = [
+  "Make the parameter mutable so you can call `next()` on it: `mut args: impl Iterator<Item = String>`.",
+  "`args.next();` skips the program path. Then `let Some(query) = args.next() else { return Err(\"not enough arguments\"); };` and the same for `file_path`.",
+  "The strings come out of the iterator already owned, so there is nothing to clone: `Ok(Config { query, file_path, ignore_case })`.",
+]

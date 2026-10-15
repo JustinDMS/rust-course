@@ -1,0 +1,29 @@
+[package]
+name = "ch09_errors"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_propagate"
+path = "ex01_propagate.rs"
+
+[[test]]
+name = "ex02_parse_pairs"
+path = "ex02_parse_pairs.rs"
+
+[[test]]
+name = "ex03_config_error"
+path = "ex03_config_error.rs"
+
+[[test]]
+name = "ex04_save_file"
+path = "ex04_save_file.rs"
+
+[[test]]
+name = "ex05_choose_wisely"
+path = "ex05_choose_wisely.rs"
