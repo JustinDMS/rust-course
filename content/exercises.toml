@@ -132,3 +132,215 @@ hints = [
   "`parse_inventory`: `for line in text.lines()`, skip lines where `line.trim().is_empty()`, push `parse_entry(line)` into a `Vec`.",
   "`count_of`: loop over `parse_inventory(text)` and return the count whose name matches; return `0` after the loop.",
 ]
+
+# ---------------------------------------------------------------------------
+# Chapter 1: Getting Started
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch01/ex01"
+crate = "ch01_getting_started"
+target = "ex01_hello"
+title = "Hello, compiler"
+kind = "fix"
+xp = 20
+description = """
+Three small syntax mistakes stand between this file and a green run. Run the
+tests, read the **first** error, fix it, run again.
+"""
+hints = [
+  "Rust statements end with `;`. Look at the line after `let greeting = ...`: the compiler points at where it expected one.",
+  "`println` is a macro, so it is spelled `println!` with the exclamation mark.",
+  "There are two `println!` calls. Both need a semicolon after them, because they are statements, not the function's return value.",
+]
+
+[[exercise]]
+id = "ch01/ex02"
+crate = "ch01_getting_started"
+target = "ex02_greeting"
+title = "Your first functions"
+kind = "implement"
+xp = 25
+description = """
+Three functions that build strings. `format!` works like `println!` but
+returns the text instead of printing it; `"=".repeat(5)` is `"====="`.
+"""
+hints = [
+  "`greeting`: `format!(\"Hello, {name}!\")`.",
+  "`banner`: build the line of `=` with `\"=\".repeat(text.len())`, then `format!(\"{line}\n{text}\n{line}\")`.",
+  "`shout`: `\"Hello! \".repeat(n)` gives a trailing space; `.trim_end()` removes it, and `.to_string()` turns the resulting `&str` back into a `String`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 2: Guessing Game (projects/guessing_game)
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch02/stage1"
+crate = "guessing_game"
+target = "stage1_parse"
+title = "Stage 1: parse a guess"
+kind = "project"
+xp = 30
+file = "projects/guessing_game/src/lib.rs"
+solution = "solutions/guessing_game/src/lib.rs"
+description = """
+Implement `parse_guess` in `projects/guessing_game/src/lib.rs`: trim the
+input, parse it as a `u32`, and turn the `Result` into an `Option` with a
+`match`.
+"""
+hints = [
+  "`input.trim().parse()` gives a `Result`. The function's return type (`Option<u32>`) is enough for the compiler to know you want a `u32`.",
+  "`match input.trim().parse() { Ok(n) => Some(n), Err(_) => None }`.",
+  "A negative number or `3.5` fails to parse as `u32`, so they fall into the `Err` arm on their own.",
+]
+
+[[exercise]]
+id = "ch02/stage2"
+crate = "guessing_game"
+target = "stage2_compare"
+title = "Stage 2: compare and report"
+kind = "project"
+xp = 30
+file = "projects/guessing_game/src/lib.rs"
+solution = "solutions/guessing_game/src/lib.rs"
+description = """
+Implement `compare` (use `cmp`) and `feedback` (a three-arm `match` on
+`Ordering`) in `projects/guessing_game/src/lib.rs`.
+"""
+hints = [
+  "`guess.cmp(&secret)` returns an `Ordering`. Note the `&`: `cmp` borrows its argument.",
+  "`feedback`: `match ordering { Ordering::Less => \"Too small!\", Ordering::Greater => \"Too big!\", Ordering::Equal => \"You win!\" }`. String literals are `&'static str`, which is exactly the return type.",
+]
+
+[[exercise]]
+id = "ch02/stage3"
+crate = "guessing_game"
+target = "stage3_play"
+title = "Stage 3: the game loop"
+kind = "project"
+xp = 40
+file = "projects/guessing_game/src/lib.rs"
+solution = "solutions/guessing_game/src/lib.rs"
+description = """
+Implement `play`: walk the scripted input lines, push one message per line,
+and stop after the first win. Then play the real thing with
+`cargo run -p guessing_game`.
+"""
+hints = [
+  "`for line in inputs { ... }` gives you each `&str`. Build the `Vec<String>` with `let mut messages = Vec::new();` and `messages.push(...)`.",
+  "Reuse your own functions: `parse_guess(line)`, then `compare`, then `feedback`. `feedback` returns a `&str`; `.to_string()` makes the `String` the vector wants.",
+  "When parsing fails: push `\"Please type a number!\".to_string()` and `continue`. After pushing the feedback, `if ordering == Ordering::Equal { break; }`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 3: Common Programming Concepts
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch03/ex01"
+crate = "ch03_common_concepts"
+target = "ex01_variables"
+title = "Mutability, constants and shadowing"
+kind = "fix"
+xp = 25
+description = """
+Three compile errors, one per concept: a `const` without a type, a counter
+that is changed without `mut`, and an assignment that tries to change a
+variable's type. Fix them. Do not edit the tests.
+"""
+hints = [
+  "Constants always need an explicit type: `const MAX_HP: u32 = 99;`.",
+  "`total += i` changes `total`, so declare it `let mut total = 0;`.",
+  "`label` starts as a `u32` and needs to become a `String`. Assignment cannot change a type, but a second `let label = format!(...)` can (shadowing). Then the first `let` does not need `mut` at all.",
+]
+
+[[exercise]]
+id = "ch03/ex02"
+crate = "ch03_common_concepts"
+target = "ex02_data_types"
+title = "Scalars, tuples and arrays"
+kind = "implement"
+xp = 35
+description = """
+Five small functions on numbers, tuples and arrays. Remember that `i32`
+and `f64` never mix without `as`, and that integer overflow is something
+you decide about explicitly.
+"""
+hints = [
+  "Float literals need a decimal point: `celsius * 9.0 / 5.0 + 32.0`. `9 / 5` would be integer division (1).",
+  "`average`: `for v in values { sum += v; }`, then `sum as f64 / 4.0`.",
+  "`swap_pair`: destructure with `let (a, b) = pair;` and return `(b as f64, a)`.",
+  "`add_u8`: `a.checked_add(b)` already returns `Option<u8>`.",
+]
+
+[[exercise]]
+id = "ch03/ex03"
+crate = "ch03_common_concepts"
+target = "ex03_functions"
+title = "Statements and expressions"
+kind = "fix"
+xp = 25
+description = """
+Three functions, three compile errors: a stray semicolon, a parameter
+without a type, and a `let` used as a value. Fix them. Do not edit the
+tests.
+"""
+hints = [
+  "`x * x;` with the semicolon is a statement, so the function returns `()`. Remove the semicolon.",
+  "`fn max3(a: i32, b, c: i32)`: `b` needs a type, `b: i32`.",
+  "`let doubled = (let d = n * 2);` cannot work because `let` produces no value. Write `let doubled = n * 2;`.",
+]
+
+[[exercise]]
+id = "ch03/ex04"
+crate = "ch03_common_concepts"
+target = "ex04_control_flow"
+title = "Loops and conditions"
+kind = "implement"
+xp = 40
+description = """
+Fibonacci, Collatz, a filtered sum and a countdown: four functions, four
+chances to pick between `for`, `while` and `loop`.
+"""
+hints = [
+  "`fib`: keep `a = 0` and `b = 1`; `for _ in 0..n { let next = a + b; a = b; b = next; }` and return `a`. Use `u64` for the running values, the test for `fib(50)` overflows a `u32`.",
+  "`collatz_steps`: `while n != 1 { n = if n % 2 == 0 { n / 2 } else { 3 * n + 1 }; steps += 1; }`. The parameter is already `mut n`.",
+  "`sum_odds_below`: `for i in 0..limit { if i % 2 == 1 { sum += i; } }`.",
+  "`countdown`: `for i in (1..=from).rev() { text.push_str(&format!(\"{i}, \")); }` then `text.push_str(\"liftoff!\")`.",
+]
+
+[[exercise]]
+id = "ch03/ex05"
+crate = "ch03_common_concepts"
+target = "ex05_health_bar"
+title = "A health bar"
+kind = "implement"
+xp = 40
+description = """
+Render a HUD health bar from `hp` and `max`: a percentage rounded down, a
+bar of `#` and `-`, and a one-word status. All integer arithmetic.
+"""
+hints = [
+  "`percent`: clamp first (`let hp = if hp > max { max } else { hp };`), then `hp * 100 / max`. Integer division rounds down for you.",
+  "`health_bar`: `let filled = width * hp as usize / max as usize;` (both `hp` and `max` are `u32`, `width` is `usize`; convert). Then `\"#\".repeat(filled)` and `\"-\".repeat(width - filled)`.",
+  "`status`: compute `percent` once, then an `if` / `else if` chain from 100 downwards returning string literals.",
+]
+
+[[exercise]]
+id = "ch03/ex06"
+crate = "ch03_common_concepts"
+target = "ex06_loops"
+title = "Labels, break values and bounds"
+kind = "fix"
+xp = 30
+description = """
+One logic bug and two compile errors: a `break` that leaves the wrong loop,
+an array index that is off by one, and a `loop` that must produce a value.
+Fix all three. Do not edit the tests.
+"""
+hints = [
+  "`first_pair_summing_to` keeps searching after it finds a pair, because `break` only exits the inner loop. The outer loop already has a label: `break 'outer;`.",
+  "A four-element array has indices 0 to 3. `values[4]` is caught by the compiler because the index is a constant.",
+  "`let steps = loop { ... }` needs the loop to produce a value: `break count;` instead of `break;`.",
+]

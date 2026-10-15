@@ -1,0 +1,2 @@
+//! Chapter 1 exercises live in the `exNN_*.rs` files next to this one.
+//! Each is its own test target: `cargo test -p ch01_getting_started --test ex01_hello`.

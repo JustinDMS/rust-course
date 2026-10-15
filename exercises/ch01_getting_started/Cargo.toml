@@ -1,0 +1,17 @@
+[package]
+name = "ch01_getting_started"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_hello"
+path = "ex01_hello.rs"
+
+[[test]]
+name = "ex02_greeting"
+path = "ex02_greeting.rs"

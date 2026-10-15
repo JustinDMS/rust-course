@@ -1,0 +1,33 @@
+[package]
+name = "ch03_common_concepts"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_variables"
+path = "ex01_variables.rs"
+
+[[test]]
+name = "ex02_data_types"
+path = "ex02_data_types.rs"
+
+[[test]]
+name = "ex03_functions"
+path = "ex03_functions.rs"
+
+[[test]]
+name = "ex04_control_flow"
+path = "ex04_control_flow.rs"
+
+[[test]]
+name = "ex05_health_bar"
+path = "ex05_health_bar.rs"
+
+[[test]]
+name = "ex06_loops"
+path = "ex06_loops.rs"

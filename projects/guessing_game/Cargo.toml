@@ -1,0 +1,21 @@
+[package]
+name = "guessing_game"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[dependencies]
+rand = "0.9"
+
+[[test]]
+name = "stage1_parse"
+path = "stages/stage1_parse.rs"
+
+[[test]]
+name = "stage2_compare"
+path = "stages/stage2_compare.rs"
+
+[[test]]
+name = "stage3_play"
+path = "stages/stage3_play.rs"
