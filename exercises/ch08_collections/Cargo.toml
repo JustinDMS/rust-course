@@ -1,0 +1,33 @@
+[package]
+name = "ch08_collections"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_vectors"
+path = "ex01_vectors.rs"
+
+[[test]]
+name = "ex02_strings"
+path = "ex02_strings.rs"
+
+[[test]]
+name = "ex03_pig_latin"
+path = "ex03_pig_latin.rs"
+
+[[test]]
+name = "ex04_departments"
+path = "ex04_departments.rs"
+
+[[test]]
+name = "ex05_borrow_while_iterating"
+path = "ex05_borrow_while_iterating.rs"
+
+[[test]]
+name = "ex06_pickups"
+path = "ex06_pickups.rs"

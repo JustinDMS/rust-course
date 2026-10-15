@@ -1,0 +1,25 @@
+[package]
+name = "ch05_structs"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_rectangles"
+path = "ex01_rectangles.rs"
+
+[[test]]
+name = "ex02_struct_update"
+path = "ex02_struct_update.rs"
+
+[[test]]
+name = "ex03_methods"
+path = "ex03_methods.rs"
+
+[[test]]
+name = "ex04_entities"
+path = "ex04_entities.rs"

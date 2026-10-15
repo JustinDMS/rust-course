@@ -1,0 +1,29 @@
+[package]
+name = "ch06_enums"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_messages"
+path = "ex01_messages.rs"
+
+[[test]]
+name = "ex02_option_handling"
+path = "ex02_option_handling.rs"
+
+[[test]]
+name = "ex03_exhaustive"
+path = "ex03_exhaustive.rs"
+
+[[test]]
+name = "ex04_coins"
+path = "ex04_coins.rs"
+
+[[test]]
+name = "ex05_tiles"
+path = "ex05_tiles.rs"

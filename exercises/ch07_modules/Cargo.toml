@@ -1,0 +1,25 @@
+[package]
+name = "ch07_modules"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_privacy"
+path = "ex01_privacy.rs"
+
+[[test]]
+name = "ex02_paths"
+path = "ex02_paths.rs"
+
+[[test]]
+name = "ex03_reexports"
+path = "ex03_reexports.rs"
+
+[[test]]
+name = "ex04_files"
+path = "ex04_files.rs"

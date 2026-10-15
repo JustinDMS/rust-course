@@ -119,6 +119,22 @@ name = "ch04_ownership"
 version = "0.1.0"
 
 [[package]]
+name = "ch05_structs"
+version = "0.1.0"
+
+[[package]]
+name = "ch06_enums"
+version = "0.1.0"
+
+[[package]]
+name = "ch07_modules"
+version = "0.1.0"
+
+[[package]]
+name = "ch08_collections"
+version = "0.1.0"
+
+[[package]]
 name = "core-foundation"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

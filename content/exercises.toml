@@ -344,3 +344,367 @@ hints = [
   "A four-element array has indices 0 to 3. `values[4]` is caught by the compiler because the index is a constant.",
   "`let steps = loop { ... }` needs the loop to produce a value: `break count;` instead of `break;`.",
 ]
+
+# ---------------------------------------------------------------------------
+# Chapter 5: Structs
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch05/ex01"
+crate = "ch05_structs"
+target = "ex01_rectangles"
+title = "Rectangles, with plain functions"
+kind = "implement"
+xp = 30
+description = """
+Define `Rectangle` (fields `width` and `height`, both `u32`, deriving
+`Debug` and `PartialEq`), then write `rectangle`, `area` and `can_hold` as
+free functions that borrow it.
+"""
+hints = [
+  "`#[derive(Debug, PartialEq)] struct Rectangle { width: u32, height: u32 }`.",
+  "`rectangle`: with field init shorthand it is just `Rectangle { width, height }`.",
+  "`can_hold`: `outer.width > inner.width && outer.height > inner.height`. Strict `>`, so a rectangle cannot hold itself.",
+]
+
+[[exercise]]
+id = "ch05/ex02"
+crate = "ch05_structs"
+target = "ex02_struct_update"
+title = "Building structs from other structs"
+kind = "fix"
+xp = 35
+description = """
+Three compile errors: a missing field, `..` applied to a reference, and a
+struct that cannot be debug-printed. Fix them. `promote` is a worked example
+of how `..user` moves only the fields it actually takes.
+"""
+hints = [
+  "`build_user` never sets `sign_in_count`. Every field must be given a value; the tests expect 1.",
+  "`with_email` has `user: &User`, and `..user` needs an owned `User`. You cannot move out of a reference, so build the struct field by field: `username: user.username.clone()`, and copy the `bool` and `u64` directly.",
+  "The last test formats a `User` with `{:?}`. Add `#[derive(Debug)]` above the struct.",
+]
+
+[[exercise]]
+id = "ch05/ex03"
+crate = "ch05_structs"
+target = "ex03_methods"
+title = "Methods and associated functions"
+kind = "implement"
+xp = 35
+description = """
+Fill in an `impl Rectangle` block: an associated constructor, three
+read-only methods, one mutating method and one consuming method.
+"""
+hints = [
+  "`square`: `Self { width: size, height: size }`. `Self` is `Rectangle` here.",
+  "`scale` takes `&mut self`, so `self.width *= factor;` works directly.",
+  "`rotated` takes `self` by value: build and return `Rectangle { width: self.height, height: self.width }`.",
+]
+
+[[exercise]]
+id = "ch05/ex04"
+crate = "ch05_structs"
+target = "ex04_entities"
+title = "Entities in a game world"
+kind = "implement"
+xp = 50
+description = """
+A `Vec3` position type and an `Entity` with health. Implement the methods,
+then `closest_alive`, which scans a slice of entities for the nearest one
+that is still standing.
+"""
+hints = [
+  "`Vec3::distance_to`: `((dx*dx + dy*dy + dz*dz)).sqrt()` where `dx = self.x - other.x` and so on. `Vec3` is `Copy`, so taking `other` by value is fine.",
+  "`take_damage`: `self.hp = self.hp.saturating_sub(amount);`. `heal`: `self.hp = (self.hp + amount).min(self.max_hp);`.",
+  "`closest_alive`: `for (i, e) in entities.iter().enumerate()`, skip `!e.is_alive()`, track the smallest distance and its index in an `Option<usize>`. Start `best_distance` at `f32::INFINITY`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 6: Enums and Pattern Matching
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch06/ex01"
+crate = "ch06_enums"
+target = "ex01_messages"
+title = "An enum with data"
+kind = "implement"
+xp = 35
+description = """
+Define the four-variant `Message` enum from the book, then `describe` it
+with a `match` that pulls the data out of each variant, and `is_noop` with
+patterns that match specific values.
+"""
+hints = [
+  "`#[derive(Debug)] enum Message { Quit, Move { x: i32, y: i32 }, Write(String), ChangeColor(u8, u8, u8) }`.",
+  "`describe`: `match self { Message::Quit => ..., Message::Move { x, y } => format!(\"move to ({x}, {y})\"), Message::Write(text) => ..., Message::ChangeColor(r, g, b) => format!(\"color #{r:02x}{g:02x}{b:02x}\") }`. Matching on `&self` lets the patterns bind references automatically.",
+  "`is_noop`: a pattern can contain literal values: `Message::Move { x: 0, y: 0 } => true`. For `Write`, bind the string and test `text.is_empty()`. End with `_ => false`.",
+]
+
+[[exercise]]
+id = "ch06/ex02"
+crate = "ch06_enums"
+target = "ex02_option_handling"
+title = "Handling Option properly"
+kind = "fix"
+xp = 35
+description = """
+Three `Option` mistakes: arithmetic on an `Option`, an `unwrap` that
+panics, and a `match` that collapses two different situations into one.
+Fix them without `unwrap()` or `expect()`.
+"""
+hints = [
+  "`next_level`: `current.unwrap_or(0) + 1`, or a two-arm `match`.",
+  "`display_name`: `match nickname { Some(nick) => nick.to_string(), None => full_name.to_string() }`, or `nickname.unwrap_or(full_name).to_string()`.",
+  "`total_score`: matching on the tuple `(a, b)` gives four cases. Add arms for `(Some(x), None)` and `(None, Some(x))` (they can share one arm with `|`) before the `(None, None)` case.",
+]
+requires = { must_not_contain = ["unwrap()", "expect("] }
+
+[[exercise]]
+id = "ch06/ex03"
+crate = "ch06_enums"
+target = "ex03_exhaustive"
+title = "Exhaustive matching"
+kind = "fix"
+xp = 30
+description = """
+New enum variants were added and three `match` expressions stopped
+compiling. Read what the compiler says is missing and add the arms with the
+right behaviour. No `_` catch-all in `enemy_hp`.
+"""
+hints = [
+  "The error says exactly which pattern is not covered, e.g. `Difficulty::Hard`. Add an arm `Difficulty::Hard => 200`.",
+  "Several variants can share an arm with `|`: `Tile::Floor | Tile::Wall | Tile::Water => 0`.",
+  "Lava is walkable (true) but does 25 damage. Two separate functions, two separate decisions.",
+]
+requires = { must_not_contain = ["_ =>"] }
+
+[[exercise]]
+id = "ch06/ex04"
+crate = "ch06_enums"
+target = "ex04_coins"
+title = "Coins, Option and if let"
+kind = "implement"
+xp = 35
+description = """
+The book's coin example, extended: values, extracting the state from a
+quarter, the classic `plus_one`, and a tally that uses `if let` to count
+Alaska quarters.
+"""
+hints = [
+  "`value_in_cents`: four arms; `Coin::Quarter(_) => 25` ignores the state.",
+  "`state_of`: `match coin { Coin::Quarter(state) => Some(state), _ => None }`.",
+  "`tally`: `for &coin in coins` copies each `Coin` out (it is `Copy`). Add `value_in_cents(coin) as u32` to the total, and `if let Coin::Quarter(UsState::Alaska) = coin { alaska += 1; }`.",
+]
+
+[[exercise]]
+id = "ch06/ex05"
+crate = "ch06_enums"
+target = "ex05_tiles"
+title = "A room of tiles"
+kind = "implement"
+xp = 55
+description = """
+Parse a text map into a grid of `Tile`s (floor, wall, numbered door,
+coloured key), look tiles up with bounds checking, find a door, and decide
+walkability with a `let else`.
+"""
+hints = [
+  "`from_char`: a `match` on `c` with `'0'..='9' => Some(Tile::Door(c.to_digit(10).unwrap()))` (the range pattern guarantees it is a digit) and `_ => None`.",
+  "`parse`: loop over `map.lines()`. Remember the first row's length as `width`; return `None` if a later row differs. For each char, `let Some(tile) = Tile::from_char(c) else { return None; };` then push. Count rows for `height`.",
+  "`get`: out of bounds when `x >= self.width || y >= self.height`; otherwise `Some(self.tiles[y * self.width + x])` (tiles are `Copy`).",
+  "`find_door`: `for (i, tile) in self.tiles.iter().enumerate()`, `if let Tile::Door(found) = tile` and `*found == id`, then `(i % self.width, i / self.width)`.",
+  "`is_walkable`: `let Some(tile) = self.get(x, y) else { return false; };` then `match tile { Tile::Wall => false, _ => true }` (or spell out the walkable variants).",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 7: Packages, Crates and Modules
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch07/ex01"
+crate = "ch07_modules"
+target = "ex01_privacy"
+title = "Private by default"
+kind = "fix"
+xp = 30
+description = """
+The restaurant module tree from the book, with the `pub` keywords removed.
+Add them back where the tests need them, and nowhere else: the helpers
+`seat_at_table`, `take_order` and `take_payment` stay private.
+"""
+hints = [
+  "Work from the error messages outward: a path like `restaurant::front_of_house::hosting::add_to_waitlist` needs every module on it to be `pub` (`front_of_house`, `hosting`) and the function too.",
+  "`back_of_house` must be `pub` for the tests to name `Breakfast` and `Appetizer`. The `Breakfast` struct, its `toast` field, `summer` and `fruit` are already `pub`; `seasonal_fruit` stays private.",
+  "Nothing inside `restaurant` needs `pub` to call its own private siblings; `eat_at_restaurant` already compiles because it lives in `restaurant` itself.",
+]
+requires = { must_not_contain = ["pub fn seat_at_table", "pub fn take_order", "pub fn take_payment"] }
+
+[[exercise]]
+id = "ch07/ex02"
+crate = "ch07_modules"
+target = "ex02_paths"
+title = "Paths: crate, super, self and use"
+kind = "fix"
+xp = 30
+description = """
+Three path mistakes: a sibling module referenced as if it were a child, a
+root-level function using a name that is only valid inside `kitchen`, and
+two `use` lines importing the same name. Fix them in place.
+"""
+hints = [
+  "Inside `kitchen::stove`, the `recipes` module is a sibling, not a child. Reach it through the parent: `super::recipes::soup()`.",
+  "`dinner` lives in the crate root. `recipes` is only visible as `kitchen::recipes` from there.",
+  "`use std::fmt::Result;` and `use std::io::Result;` both bring in `Result`. `write_receipt` only needs the I/O one: delete the `fmt` import, or keep both with `use std::io::Result as IoResult;` and use that name in the signature.",
+]
+
+[[exercise]]
+id = "ch07/ex03"
+crate = "ch07_modules"
+target = "ex03_reexports"
+title = "Re-exporting with pub use"
+kind = "implement"
+xp = 30
+description = """
+Write the `prelude` module: nothing but `pub use` lines that make `Vec3`,
+`dot`, `Camera` and `play` available as `prelude::Name`, without moving
+any code.
+"""
+hints = [
+  "From inside `prelude`, the engine is reached as `super::engine::...`.",
+  "`pub use super::engine::math::{Vec3, dot};` brings in two names with one line.",
+  "`Camera` is two levels down: `pub use super::engine::render::camera::Camera;`.",
+]
+
+[[exercise]]
+id = "ch07/ex04"
+crate = "ch07_modules"
+target = "ex04_files"
+title = "Modules in separate files"
+kind = "fix"
+xp = 35
+file = "exercises/ch07_modules/src/lib.rs"
+solution = "solutions/ch07_modules/src/lib.rs"
+description = """
+This one edits the chapter's library crate under `exercises/ch07_modules/src/`:
+`lib.rs`, `inventory.rs` and `inventory/items.rs`. The test file does not
+change. Declare the `items` submodule, make `inventory` public, and expose
+the `Item` fields the tests read.
+"""
+hints = [
+  "`src/inventory.rs` must contain `pub mod items;` so that `src/inventory/items.rs` becomes part of the crate. Without that line the file is simply not compiled.",
+  "In `src/lib.rs`, change `mod inventory;` to `pub mod inventory;` so the tests (an external user of the library) can reach it.",
+  "The tests read `item.name` and `item.weight` directly, so both fields need `pub` in `items.rs`.",
+]
+
+# ---------------------------------------------------------------------------
+# Chapter 8: Common Collections
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch08/ex01"
+crate = "ch08_collections"
+target = "ex01_vectors"
+title = "Median and mode"
+kind = "implement"
+xp = 40
+description = """
+The book's end-of-chapter exercise: median and mode of a list of integers,
+plus a filter. Sorting a copy, indexing, and a `HashMap` of counts.
+"""
+hints = [
+  "`median`: return `None` early if empty. `let mut sorted = values.to_vec(); sorted.sort();` then pick `sorted[n / 2]` for odd `n`, or average `sorted[n / 2 - 1]` and `sorted[n / 2]` for even `n`. Convert with `as f64` before dividing.",
+  "`mode`: `*counts.entry(v).or_insert(0) += 1;` for each value. Then walk the map keeping the best `(value, count)`; replace when the count is higher, or equal with a smaller value.",
+  "`evens`: a `for &v in values` loop with `if v % 2 == 0 { out.push(v) }`.",
+]
+
+[[exercise]]
+id = "ch08/ex02"
+crate = "ch08_collections"
+target = "ex02_strings"
+title = "Strings are not arrays of chars"
+kind = "fix"
+xp = 35
+description = """
+`s[0]`, byte slicing through a multi-byte character, and `+` on a
+borrowed `String`: three things Rust strings do not allow, or allow only
+when you mean bytes. Fix them. Do not edit the tests.
+"""
+hints = [
+  "`first_char`: `s.chars().next()` already returns `Option<char>`, `None` for an empty string.",
+  "`take_chars`: `&s[..n]` counts bytes and panics mid-character. Take characters instead: `s.chars().take(n).collect()` (the return type tells `collect` to build a `String`).",
+  "`full_name`: `+` wants an owned `String` on the left. `format!(\"{first} {last}\")` borrows both; or `first.clone() + \" \" + last`.",
+]
+
+[[exercise]]
+id = "ch08/ex03"
+crate = "ch08_collections"
+target = "ex03_pig_latin"
+title = "Pig latin"
+kind = "implement"
+xp = 40
+description = """
+The book's pig latin exercise: move a leading consonant to the end with
+`ay`, or append `hay` after a vowel. Then apply it to every word in a
+sentence.
+"""
+hints = [
+  "`let mut chars = word.chars(); let Some(first) = chars.next() else { return String::new(); };` handles the empty case and gives you the first character.",
+  "`\"aeiouAEIOU\".contains(first)` tests for a vowel. For consonants, `let rest: String = chars.collect();` is everything after the first character; then `format!(\"{rest}-{first}ay\")`.",
+  "`pig_latin_sentence`: collect `pig_latin(word)` for each `word in sentence.split_whitespace()` into a `Vec<String>`, then `.join(\" \")`.",
+]
+
+[[exercise]]
+id = "ch08/ex04"
+crate = "ch08_collections"
+target = "ex04_departments"
+title = "Employees and departments"
+kind = "implement"
+xp = 45
+description = """
+The book's text-interface exercise, with the parsing done through a slice
+pattern. A `HashMap<String, Vec<String>>`, `entry().or_default()`, and
+sorting so the output is predictable.
+"""
+hints = [
+  "`add`: `let words: Vec<&str> = command.split_whitespace().collect();` then `match words.as_slice() { [\"Add\", name, \"to\", dept] => { ... true } _ => false }`.",
+  "Inside that arm: `self.departments.entry(dept.to_string()).or_default().push(name.to_string());`. `or_default` creates an empty `Vec` the first time a department is seen.",
+  "`people_in`: `self.departments.get(department)` gives `Option<&Vec<String>>`; clone it (or build an empty vec), then `sort()`.",
+  "`all`: push `(dept.clone(), self.people_in(dept))` for every key, then `out.sort()`: tuples sort by their first element first.",
+]
+
+[[exercise]]
+id = "ch08/ex05"
+crate = "ch08_collections"
+target = "ex05_borrow_while_iterating"
+title = "Changing a collection you are looking at"
+kind = "fix"
+xp = 35
+description = """
+Three functions mutate a collection while iterating over it, and the
+borrow checker says no. Each has an idiomatic fix: `retain`, collect then
+`extend`, and `values_mut`.
+"""
+hints = [
+  "`drop_below`: `values.retain(|&v| v >= min);` keeps the elements for which the closure is true. (Removing inside a `for` loop would also skip elements, even in languages that allow it.)",
+  "`duplicate_evens`: gather the evens into a new `Vec` first, then `values.extend(evens);` after the loop.",
+  "`apply_bonus`: `for score in scores.values_mut() { *score += bonus; updated += 1; }`. The `insert` after the loop is fine, because the mutable borrow from `values_mut()` ended with the loop.",
+]
+
+[[exercise]]
+id = "ch08/ex06"
+crate = "ch08_collections"
+target = "ex06_pickups"
+title = "A pickup log"
+kind = "implement"
+xp = 45
+description = """
+Count item pickups from a log with the entry API, rank them with a custom
+sort (count descending, then name), and pick the favourite.
+"""
+hints = [
+  "`count_pickups`: for each `line.trim()` that is not empty, `*counts.entry(name.to_string()).or_insert(0) += 1;`.",
+  "`ranked`: copy the map into a `Vec<(String, u32)>`, then `entries.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));`. Comparing `b` to `a` on the count gives descending order; `.then(...)` breaks ties.",
+  "`favourite`: `ranked(&count_pickups(log)).into_iter().next()`. An empty log has no entries, so that is `None` for free.",
+]

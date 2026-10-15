@@ -84,16 +84,22 @@ pub async fn verify(content: &Content, only: Option<&str>) -> Result<Report> {
             copy_fresh(&solution, &dest)?;
         }
     }
-    // Project solutions may need more than one file (lib.rs + main.rs):
-    // overlay solutions/<name>/src onto projects/<name>/src when present.
+    // Some solutions need more than one file (a project's lib.rs + main.rs,
+    // or a module split across files): overlay solutions/<name>/src onto
+    // projects/<name>/src or exercises/<name>/src when present.
     let solutions_dir = root.join("solutions");
     if solutions_dir.exists() {
         for entry in std::fs::read_dir(&solutions_dir)? {
             let entry = entry?;
             let src = entry.path().join("src");
-            let project = scratch.join("projects").join(entry.file_name());
-            if src.is_dir() && project.is_dir() {
-                copy_tree(&src, &project.join("src"))?;
+            if !src.is_dir() {
+                continue;
+            }
+            for kind in ["projects", "exercises"] {
+                let crate_dir = scratch.join(kind).join(entry.file_name());
+                if crate_dir.is_dir() {
+                    copy_tree(&src, &crate_dir.join("src"))?;
+                }
             }
         }
     }
