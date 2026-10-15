@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "course",
+      "runtimeExecutable": "cargo",
+      "runtimeArgs": ["run", "-p", "course", "--", "serve", "--no-open"],
+      "port": 7878
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+[package]
+name = "ch04_ownership"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+autotests = false
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "ex01_moves"
+path = "ex01_moves.rs"
+
+[[test]]
+name = "ex02_borrow_dont_clone"
+path = "ex02_borrow_dont_clone.rs"
+
+[[test]]
+name = "ex03_borrow_rules"
+path = "ex03_borrow_rules.rs"
+
+[[test]]
+name = "ex04_first_word"
+path = "ex04_first_word.rs"
+
+[[test]]
+name = "ex05_str_signatures"
+path = "ex05_str_signatures.rs"
+
+[[test]]
+name = "ex06_inventory_lines"
+path = "ex06_inventory_lines.rs"

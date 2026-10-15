@@ -1,0 +1,134 @@
+# One [[exercise]] per test target. `file` and `solution` default to
+# exercises/<crate>/<target>.rs and solutions/<crate>/<target>.rs.
+#
+# kind: fix | implement | write | project
+
+# ---------------------------------------------------------------------------
+# Chapter 4: Understanding Ownership
+# ---------------------------------------------------------------------------
+
+[[exercise]]
+id = "ch04/ex01"
+crate = "ch04_ownership"
+target = "ex01_moves"
+title = "Moves and copies"
+kind = "fix"
+xp = 35
+description = """
+Two compile errors, two lessons. `describe` uses a `String` after moving it
+into another function, and `Tag` claims to be `Copy` while owning a `String`.
+
+Make the tests compile and pass. Do not edit the tests.
+"""
+hints = [
+  "Read the first error: *borrow of moved value: `name`*. The move happens on the line that calls `make_upper(name)`. Anything you need from `name` has to be computed **before** that line, or `make_upper` has to borrow instead of take.",
+  "`name.len()` returns a `usize`, which is `Copy`. Compute `letters` first, then move `name` into `make_upper`.",
+  "For `Tag`: a type can only be `Copy` if all of its fields are `Copy`. `String` is not. Remove `Copy` from the derive, and in `tag_all` push `tag.clone()` instead of `tag`.",
+]
+
+[[exercise]]
+id = "ch04/ex02"
+crate = "ch04_ownership"
+target = "ex02_borrow_dont_clone"
+title = "Borrow, don't clone"
+kind = "fix"
+xp = 35
+description = """
+`report` receives a borrowed slice, but its three helpers each demand an
+owned `Vec<u32>`. Copying the data into a fresh vector for every call would
+work, and would be wasteful.
+
+Change the helpers to **borrow** the scores (`&[u32]`). The checker rejects
+`.clone()` and `.to_vec()` in this file.
+"""
+hints = [
+  "A function that only reads a vector should take a slice: `fn total(scores: &[u32]) -> u32`. A `&Vec<u32>` turns into a `&[u32]` automatically at the call site.",
+  "Once every helper takes `&[u32]`, `report` can pass its `scores` straight through: it is already a `&[u32]`, and a shared reference is `Copy`, so using it three times is fine.",
+  "`average` calls `total` too. Pass `scores` through unchanged: `total(scores)`.",
+]
+requires = { must_not_contain = [".to_vec()", ".clone()"] }
+
+[[exercise]]
+id = "ch04/ex03"
+crate = "ch04_ownership"
+target = "ex03_borrow_rules"
+title = "The borrowing rules"
+kind = "fix"
+xp = 45
+description = """
+Three functions, three broken rules:
+
+1. `push_doubles` pushes while iterating (shared borrow alive during a mutable one).
+2. `longest_weapon_name` returns a reference to a vector that is about to be dropped.
+3. `swap_ends_and_sum` holds two `&mut` into the same vector.
+
+Fix each so the tests compile and pass. Do not edit the tests.
+"""
+hints = [
+  "`push_doubles`: the `for v in values.iter()` loop borrows `values` for its whole duration. Loop over indices instead: `let n = values.len(); for i in 0..n { ... }`. Reading `values[i]` gives you an `i32` (Copy), and the borrow ends immediately.",
+  "`longest_weapon_name`: there is nothing outside the function for a reference to point at once `names` is dropped. Change the return type to `String` and return `longest.clone()` (or `longest.to_string()`).",
+  "`swap_ends_and_sum`: `Vec` has a `swap(i, j)` method that takes one `&mut self`. Compute the last index first (`let last = values.len() - 1;`), call `values.swap(0, last)`, then sum.",
+]
+
+[[exercise]]
+id = "ch04/ex04"
+crate = "ch04_ownership"
+target = "ex04_first_word"
+title = "String slices"
+kind = "implement"
+xp = 45
+description = """
+Implement `first_word`, `rest`, `unquote` and `middle_third`, each returning a
+slice **into** the input rather than a new `String`.
+
+Do the index arithmetic yourself: this exercise rejects `split`, `strip_` and
+`trim` so you get a feel for `&s[a..b]`.
+"""
+hints = [
+  "`first_word`: walk `s.bytes().enumerate()`; at the first `b' '` return `&s[..i]`. If the loop finishes, return `s` itself.",
+  "`rest`: `s.find(' ')` gives `Option<usize>`. With `Some(i)` return `&s[i + 1..]`; with `None` return `\"\"`.",
+  "`unquote`: look at `s.as_bytes()`. If it has at least 2 bytes and the first and last are `b'\"'`, return `&s[1..s.len() - 1]`, otherwise `s`.",
+  "`middle_third`: `let len = s.len(); &s[len / 3..2 * len / 3]`. For the empty string that is `&s[0..0]`, which is fine.",
+]
+requires = { must_not_contain = ["split", "strip_", "trim"] }
+
+[[exercise]]
+id = "ch04/ex05"
+crate = "ch04_ownership"
+target = "ex05_str_signatures"
+title = "&str over &String"
+kind = "fix"
+xp = 30
+description = """
+The bodies are correct. The parameter types are too narrow: `&String` rejects
+literals, `String` by value rejects borrows, and a function that mutates needs
+`&mut`.
+
+Fix only the signatures so the tests compile. Do not edit the tests.
+"""
+hints = [
+  "Any parameter that is only read should be `&str`. `&String` coerces to `&str` automatically, and literals already are `&str`.",
+  "`exclaim` must change the caller's string: `fn exclaim(s: &mut String)`. The body `s.push('!')` already works through the reference.",
+  "`with_title` reads both arguments: `fn with_title(name: &str, title: &str) -> String`.",
+]
+
+[[exercise]]
+id = "ch04/ex06"
+crate = "ch04_ownership"
+target = "ex06_inventory_lines"
+title = "Parsing an inventory with slices"
+kind = "implement"
+xp = 50
+description = """
+Parse a small `name:count` inventory format using slices that borrow from
+the input text. Build `parse_entry` first, then `parse_inventory` on top of
+it, then `count_of` on top of that.
+
+Input is well-formed; `unwrap`/`expect` on the number parse is acceptable
+here.
+"""
+hints = [
+  "`parse_entry`: `let colon = line.find(':').unwrap();` then `&line[..colon]` is the name and `line[colon + 1..].parse().unwrap()` is the count (give `parse` a type to aim for: the return type already says `u32`).",
+  "`parse_inventory`: `for line in text.lines()`, skip lines where `line.trim().is_empty()`, push `parse_entry(line)` into a `Vec`.",
+  "`count_of`: loop over `parse_inventory(text)` and return the count whose name matches; return `0` after the loop.",
+]

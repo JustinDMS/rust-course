@@ -1,0 +1,126 @@
+title = "The Rust Programming Language, interactive"
+
+# Level titles by cumulative XP. Thresholds are tuned to the total XP of the
+# course (see `cargo run -p course -- list`).
+[[levels]]
+xp = 0
+title = "Newcomer"
+
+[[levels]]
+xp = 100
+title = "Hello, World!"
+
+[[levels]]
+xp = 300
+title = "Cargo Pilot"
+
+[[levels]]
+xp = 600
+title = "Borrower"
+
+[[levels]]
+xp = 1000
+title = "Borrow Checker's Friend"
+
+[[levels]]
+xp = 1500
+title = "Trait Crafter"
+
+[[levels]]
+xp = 2200
+title = "Iterator Whisperer"
+
+[[levels]]
+xp = 3000
+title = "Rustacean"
+
+[[chapters]]
+id = "ch01"
+number = 1
+title = "Getting Started"
+subtitle = "rustup, cargo and your first program"
+book = "Chapter 1"
+
+[[chapters]]
+id = "ch02"
+number = 2
+title = "Programming a Guessing Game"
+subtitle = "A whole program, concepts explained as you need them"
+book = "Chapter 2"
+
+[[chapters]]
+id = "ch03"
+number = 3
+title = "Common Programming Concepts"
+subtitle = "Variables, types, functions, control flow"
+book = "Chapter 3"
+
+[[chapters]]
+id = "ch04"
+number = 4
+title = "Understanding Ownership"
+subtitle = "Moves, borrows and slices: Rust's central idea"
+book = "Chapter 4"
+
+[[chapters]]
+id = "ch05"
+number = 5
+title = "Using Structs"
+subtitle = "Structuring related data and giving it methods"
+book = "Chapter 5"
+
+[[chapters]]
+id = "ch06"
+number = 6
+title = "Enums and Pattern Matching"
+subtitle = "Enums with data, Option, match, if let"
+book = "Chapter 6"
+
+[[chapters]]
+id = "ch07"
+number = 7
+title = "Packages, Crates and Modules"
+subtitle = "Organising code and controlling visibility"
+book = "Chapter 7"
+
+[[chapters]]
+id = "ch08"
+number = 8
+title = "Common Collections"
+subtitle = "Vec, String and HashMap"
+book = "Chapter 8"
+
+[[chapters]]
+id = "ch09"
+number = 9
+title = "Error Handling"
+subtitle = "panic!, Result and the ? operator"
+book = "Chapter 9"
+
+[[chapters]]
+id = "ch10"
+number = 10
+title = "Generics, Traits and Lifetimes"
+subtitle = "Code that works for many types, safely"
+book = "Chapter 10"
+
+[[chapters]]
+id = "ch11"
+number = 11
+title = "Writing Automated Tests"
+subtitle = "Making the compiler's guarantees go further"
+book = "Chapter 11"
+
+[[chapters]]
+id = "ch12"
+number = 12
+title = "An I/O Project: minigrep"
+subtitle = "A command line tool, built step by step"
+book = "Chapter 12"
+
+[[chapters]]
+id = "ch13"
+number = 13
+title = "Closures and Iterators"
+subtitle = "Functional features that compile to tight loops"
+book = "Chapter 13"
