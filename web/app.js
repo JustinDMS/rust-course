@@ -232,11 +232,7 @@
         el('div', { class: 'chapter-kicker' }, 'Chapter ' + ch.number + (ch.book ? ' · Book ' + ch.book : '')),
         el('h1', null, ch.title),
         el('p', { class: 'chapter-subtitle' }, ch.subtitle),
-        el('div', { class: 'chapter-stats' },
-          el('span', null, el('strong', null, s.done), ' / ', s.total, ' cards'),
-          el('span', null, el('strong', null, s.exDone), ' / ', s.exTotal, ' exercises'),
-          el('span', null, el('strong', null, ch.cards.reduce((n, c) => n + (c.xp || 0), 0) +
-            ch.cards.filter((c) => c.type === 'exercise').reduce((n, c) => n + (exerciseById(c.ref).xp || 0), 0)), ' XP available'))),
+        chapterStatsRow(ch)),
       el('div', { class: 'toolbar' }, showAllToggle));
 
     ch.cards.forEach((card, idx) => {
@@ -255,6 +251,22 @@
         nextCh ? el('button', { class: 'btn primary', onclick: () => { location.hash = '#/' + nextCh.id; } },
           'On to ' + nextCh.number + '. ' + nextCh.title) : null));
     }
+  }
+
+  function chapterStatsRow(ch) {
+    const s = chapterStats(ch);
+    const xp = ch.cards.reduce((n, c) => n + (c.xp || 0), 0) +
+      ch.cards.filter((c) => c.type === 'exercise').reduce((n, c) => n + (exerciseById(c.ref).xp || 0), 0);
+    return el('div', { class: 'chapter-stats', id: 'chapter-stats' },
+      el('span', null, el('strong', null, s.done), ' / ', s.total, ' cards'),
+      el('span', null, el('strong', null, s.exDone), ' / ', s.exTotal, ' exercises'),
+      el('span', null, el('strong', null, xp), ' XP available'));
+  }
+
+  // Refreshes the header counts without re-rendering the cards.
+  function refreshChapterStats(ch) {
+    const old = $('#chapter-stats');
+    if (old) old.replaceWith(chapterStatsRow(ch));
   }
 
   function exerciseById(id) {
@@ -305,6 +317,7 @@
       const reply = await api('POST', '/api/cards/' + encodeURIComponent(card.id) + '/answer', { correct });
       state.progress.cards[card.id] = reply.card;
       handleAward(reply.award);
+      refreshChapterStats(ch);
       return reply;
     } catch (e) {
       toast('Could not save: ' + e.message, 'error', 4000);
@@ -400,7 +413,7 @@
 
   function renderPredict(ch, card, body, opts) {
     body.append(el('pre', { class: 'code lang-rust', html: '<code>' + hl.rust(card.code) + '</code>' }));
-    body.append(el('div', { class: 'question' }, card.question || 'What happens?'));
+    body.append(el('div', { class: 'question', html: md.inline(card.question || 'What happens?') }));
     renderChoice(ch, card, body, opts, false);
   }
 
@@ -408,7 +421,7 @@
 
   function renderQuiz(ch, card, body, opts) {
     if (card.body) body.append(el('div', { html: md.render(card.body) }));
-    body.append(el('div', { class: 'question' }, card.question));
+    body.append(el('div', { class: 'question', html: md.inline(card.question) }));
     if (card.answers && card.answers.length) renderFill(ch, card, body, opts);
     else renderChoice(ch, card, body, opts, card.multi);
   }
@@ -616,6 +629,7 @@
         showOutcome(reply.outcome);
         const wasDone = opts.done;
         handleAward(reply.award);
+        refreshChapterStats(ch);
         if (reply.outcome.status === 'passed') {
           const cardNode = $('#card-' + CSS.escape(card.id));
           cardNode.classList.add('done', 'flash');

@@ -130,6 +130,7 @@ async fn serve(root: PathBuf, port: u16, open: bool) -> Result<()> {
         .route("/api/exercises/{ch}/{ex}/open", post(api_exercise_open))
         .route("/api/playground", post(api_playground))
         .fallback_service(ServeDir::new(&web).fallback(ServeFile::new(web.join("index.html"))))
+        .layer(axum::middleware::from_fn(no_cache))
         .with_state(state);
 
     let addr = format!("127.0.0.1:{port}");
@@ -145,6 +146,17 @@ async fn serve(root: PathBuf, port: u16, open: bool) -> Result<()> {
     }
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+/// The frontend is edited in place and reloaded; never let the browser
+/// serve a stale `app.js` from its cache.
+async fn no_cache(request: axum::extract::Request, next: axum::middleware::Next) -> Response {
+    let mut response = next.run(request).await;
+    response.headers_mut().insert(
+        axum::http::header::CACHE_CONTROL,
+        axum::http::HeaderValue::from_static("no-cache"),
+    );
+    response
 }
 
 fn open_browser(url: &str) {
