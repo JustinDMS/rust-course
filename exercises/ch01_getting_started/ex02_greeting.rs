@@ -6,8 +6,7 @@
 //! Book: 1.2 "Hello, World!" and 1.3 "Hello, Cargo!"
 //!
 //! Your job: replace each `todo!()` so the tests pass. Run them with the
-//! button in the course app or with
-//! `cargo test -p ch01_getting_started --test ex02_greeting`.
+//! *Run tests* button (or Ctrl+Enter in the editor).
 
 /// `"Hello, <name>!"`
 fn greeting(name: &str) -> String {

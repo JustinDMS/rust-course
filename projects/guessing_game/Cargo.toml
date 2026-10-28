@@ -6,7 +6,7 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
-rand = "0.9"
+rand = "0.10"
 
 [[test]]
 name = "stage1_parse"

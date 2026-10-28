@@ -2,6 +2,10 @@
 # exercises/<crate>/<target>.rs and solutions/<crate>/<target>.rs.
 #
 # kind: fix | implement | write | project
+#
+# Project stages (kind = "project") edit projects/<crate>/src/lib.rs and keep
+# their tests in projects/<crate>/stages/<target>.rs. The site appends those
+# tests to the editor's text as a #[cfg(test)] module when running.
 
 # ---------------------------------------------------------------------------
 # Chapter 4: Understanding Ownership
@@ -185,9 +189,12 @@ xp = 30
 file = "projects/guessing_game/src/lib.rs"
 solution = "solutions/guessing_game/src/lib.rs"
 description = """
-Implement `parse_guess` in `projects/guessing_game/src/lib.rs`: trim the
-input, parse it as a `u32`, and turn the `Result` into an `Option` with a
-`match`.
+Implement `parse_guess`: trim the input, parse it as a `u32`, and turn the
+`Result` into an `Option` with a `match`.
+
+The three stages of this project edit the same file, the game's `lib.rs`.
+Each stage appends its own tests when you press Run, so the editor shows
+only your code.
 """
 hints = [
   "`input.trim().parse()` gives a `Result`. The function's return type (`Option<u32>`) is enough for the compiler to know you want a `u32`.",
@@ -206,7 +213,7 @@ file = "projects/guessing_game/src/lib.rs"
 solution = "solutions/guessing_game/src/lib.rs"
 description = """
 Implement `compare` (use `cmp`) and `feedback` (a three-arm `match` on
-`Ordering`) in `projects/guessing_game/src/lib.rs`.
+`Ordering`). Same file as stage 1; your `parse_guess` is still there.
 """
 hints = [
   "`guess.cmp(&secret)` returns an `Ordering`. Note the `&`: `cmp` borrows its argument.",
@@ -224,8 +231,8 @@ file = "projects/guessing_game/src/lib.rs"
 solution = "solutions/guessing_game/src/lib.rs"
 description = """
 Implement `play`: walk the scripted input lines, push one message per line,
-and stop after the first win. Then play the real thing with
-`cargo run -p guessing_game`.
+and stop after the first win. Then watch the whole game run in the card
+below.
 """
 hints = [
   "`for line in inputs { ... }` gives you each `&str`. Build the `Vec<String>` with `let mut messages = Vec::new();` and `messages.push(...)`.",
@@ -584,18 +591,16 @@ target = "ex04_files"
 title = "Modules in separate files"
 kind = "fix"
 xp = 35
-file = "exercises/ch07_modules/src/lib.rs"
-solution = "solutions/ch07_modules/src/lib.rs"
 description = """
-This one edits the chapter's library crate under `exercises/ch07_modules/src/`:
-`lib.rs`, `inventory.rs` and `inventory/items.rs`. The test file does not
-change. Declare the `items` submodule, make `inventory` public, and expose
-the `Item` fields the tests read.
+The crate from the lesson, flattened into one file: comments mark where
+`lib.rs`, `inventory.rs` and `inventory/items.rs` would begin. The `tests`
+module acts as an outside user and cannot reach what it needs. Make the
+`items` module and the two `Item` fields public. Do not change the tests.
 """
 hints = [
-  "`src/inventory.rs` must contain `pub mod items;` so that `src/inventory/items.rs` becomes part of the crate. Without that line the file is simply not compiled.",
-  "In `src/lib.rs`, change `mod inventory;` to `pub mod inventory;` so the tests (an external user of the library) can reach it.",
-  "The tests read `item.name` and `item.weight` directly, so both fields need `pub` in `items.rs`.",
+  "`mod items` inside `inventory` is private, so `crate::inventory::items::Item` is not a path an outsider may use. Make it `pub mod items`. In a real crate that line would be `pub mod items;` in `src/inventory.rs`; forget it entirely and `items.rs` is not compiled at all.",
+  "`total_weight` lives in `inventory`, the *parent* of `items`, and a parent cannot see its child's private fields either. Both `name` and `weight` need `pub`.",
+  "Two words to add in total: `pub` before `mod items`, and `pub` before each of the two fields.",
 ]
 
 # ---------------------------------------------------------------------------
@@ -1027,10 +1032,12 @@ xp = 30
 file = "projects/minigrep/src/lib.rs"
 solution = "solutions/minigrep/src/lib.rs"
 description = """
-Implement `Config::build_with` in `projects/minigrep/src/lib.rs`: check the
-argument count, clone the query and file path out of the slice, and return
-`Err("not enough arguments")` when there are too few. `build` already
-delegates to it.
+Implement `Config::build_with`: check the argument count, clone the query
+and file path out of the slice, and return `Err("not enough arguments")`
+when there are too few. `build` already delegates to it.
+
+As with the guessing game, every minigrep stage (four here, one more in
+chapter 13) edits this same file and appends its own tests when you run it.
 """
 hints = [
   "`if args.len() < 3 { return Err(\"not enough arguments\"); }`: the program path, the query and the file path make three.",
@@ -1085,9 +1092,8 @@ file = "projects/minigrep/src/lib.rs"
 solution = "solutions/minigrep/src/lib.rs"
 description = """
 Implement `search_case_insensitive` and make `run` choose between the two
-searches based on `config.ignore_case`. Then try it for real:
-`cargo run -p minigrep -- FROG projects/minigrep/poem.txt` with and without
-`IGNORE_CASE` set.
+searches based on `config.ignore_case`. The stage tests write a short poem
+to a temporary file and search it both ways.
 """
 hints = [
   "`let query = query.to_lowercase();` makes an owned `String`, so inside the loop compare `line.to_lowercase().contains(&query)` (note the `&`).",
@@ -1201,10 +1207,10 @@ xp = 35
 file = "projects/minigrep/src/lib.rs"
 solution = "solutions/minigrep/src/lib.rs"
 description = """
-Back in `projects/minigrep/src/lib.rs`: implement `Config::build_from_iter`
-with `next()` calls instead of slice indexing and cloning, as in chapter
-13.4. If your `search` still uses a loop, rewrite it as
-`lines().filter(...).collect()` while you are there.
+Back in minigrep's `lib.rs`, the same file as chapter 12's stages:
+implement `Config::build_from_iter` with `next()` calls instead of slice
+indexing and cloning, as in chapter 13.4. If your `search` still uses a
+loop, rewrite it as `lines().filter(...).collect()` while you are there.
 """
 hints = [
   "Make the parameter mutable so you can call `next()` on it: `mut args: impl Iterator<Item = String>`.",

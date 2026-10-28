@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "course",
-      "runtimeExecutable": "cargo",
-      "runtimeArgs": ["run", "-p", "course", "--", "serve", "--no-open"],
-      "port": 7878
+      "name": "course-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8008", "--bind", "127.0.0.1", "-d", "docs"],
+      "port": 8008
     }
   ]
 }

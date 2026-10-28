@@ -136,41 +136,81 @@ impl Exercise {
         }
     }
 
-    /// What the frontend sees: no hints, no solution path.
-    pub fn public(&self, root: &Path) -> PublicExercise {
-        PublicExercise {
+    /// Project stages edit the project's `lib.rs`; their tests live apart,
+    /// in `projects/<crate>/stages/<target>.rs`.
+    pub fn is_project(&self) -> bool {
+        self.kind == "project"
+    }
+
+    /// Where the tests are when they are not in the edited file itself.
+    pub fn tests_path(&self, root: &Path) -> Option<PathBuf> {
+        self.is_project().then(|| {
+            root.join("projects")
+                .join(&self.crate_name)
+                .join("stages")
+                .join(format!("{}.rs", self.target))
+        })
+    }
+
+    /// The editor buffer this exercise works on. All stages of one project
+    /// share the project's source, so they share a key.
+    pub fn source_key(&self) -> String {
+        if self.is_project() {
+            self.crate_name.clone()
+        } else {
+            self.id.clone()
+        }
+    }
+
+    /// The edited file's path relative to the course root, with `/`.
+    pub fn display_file(&self, root: &Path) -> String {
+        self.file_path(root)
+            .strip_prefix(root)
+            .map(|p| p.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_default()
+    }
+
+    /// Everything the static site needs for this exercise.
+    pub fn export(&self, root: &Path) -> Result<ExportedExercise> {
+        let assembled = crate::online::assemble(self, root)?;
+        Ok(ExportedExercise {
             id: self.id.clone(),
             chapter: self.chapter_id().to_string(),
-            crate_name: self.crate_name.clone(),
-            target: self.target.clone(),
             title: self.title.clone(),
             kind: self.kind.clone(),
             xp: self.xp,
             description: self.description.clone(),
-            file: self
-                .file_path(root)
-                .strip_prefix(root)
-                .map(|p| p.to_string_lossy().replace('\\', "/"))
-                .unwrap_or_default(),
-            hint_count: self.hints.len(),
+            file: self.display_file(root),
+            source_key: self.source_key(),
+            starter: assembled.starter,
+            tests: assembled.tests,
+            solution: assembled.solution,
+            hints: self.hints.clone(),
             requires: self.requires.clone(),
-        }
+        })
     }
 }
 
+/// An exercise as `docs/data/course.js` carries it. Hints and the solution
+/// are included; the site reveals them when the learner asks.
 #[derive(Debug, Clone, Serialize)]
-pub struct PublicExercise {
+pub struct ExportedExercise {
     pub id: String,
     pub chapter: String,
-    #[serde(rename = "crate")]
-    pub crate_name: String,
-    pub target: String,
     pub title: String,
     pub kind: String,
     pub xp: u32,
     pub description: String,
+    /// Shown as the "file" being edited, e.g. `exercises/ch04_ownership/ex03_borrow_rules.rs`.
     pub file: String,
-    pub hint_count: usize,
+    /// Project stages share one editor buffer; everything else has its own.
+    pub source_key: String,
+    /// What the editor starts with.
+    pub starter: String,
+    /// Appended to the buffer before running, when the tests are separate.
+    pub tests: Option<String>,
+    pub solution: String,
+    pub hints: Vec<String>,
     pub requires: Requires,
 }
 
@@ -262,13 +302,13 @@ pub struct Chapter {
     pub cards: Vec<Card>,
 }
 
-/// Everything the frontend needs for `GET /api/course`.
+/// Everything the static site needs; serialised into `docs/data/course.js`.
 #[derive(Debug, Clone, Serialize)]
 pub struct Course {
     pub title: String,
     pub levels: Vec<Level>,
     pub chapters: Vec<Chapter>,
-    pub exercises: Vec<PublicExercise>,
+    pub exercises: Vec<ExportedExercise>,
     /// Total XP available, for the level bar.
     pub total_xp: u32,
 }
@@ -336,36 +376,25 @@ impl Content {
         })
     }
 
-    pub fn course(&self) -> Course {
-        let exercises: Vec<PublicExercise> =
-            self.exercises.values().map(|e| e.public(&self.root)).collect();
+    pub fn course(&self) -> Result<Course> {
+        let exercises = self
+            .exercises
+            .values()
+            .map(|e| e.export(&self.root))
+            .collect::<Result<Vec<_>>>()?;
         let total_xp = self
             .chapters
             .iter()
             .flat_map(|c| c.cards.iter().map(Card::xp))
             .sum::<u32>()
             + self.exercises.values().map(|e| e.xp).sum::<u32>();
-        Course {
+        Ok(Course {
             title: self.index.title.clone(),
             levels: self.index.levels.clone(),
             chapters: self.chapters.clone(),
             exercises,
             total_xp,
-        }
-    }
-
-    pub fn exercise(&self, id: &str) -> Result<&Exercise> {
-        self.exercises
-            .get(id)
-            .ok_or_else(|| anyhow!("unknown exercise {id}"))
-    }
-
-    pub fn card_xp(&self, card_id: &str) -> Option<u32> {
-        self.chapters
-            .iter()
-            .flat_map(|c| c.cards.iter())
-            .find(|c| c.id() == card_id)
-            .map(Card::xp)
+        })
     }
 }
 

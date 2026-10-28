@@ -1,4 +1,4 @@
-//! Stage 1: parsing input. Edit `projects/guessing_game/src/lib.rs`.
+//! Stage 1: parsing input.
 
 use guessing_game::parse_guess;
 

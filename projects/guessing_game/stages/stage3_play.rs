@@ -1,4 +1,4 @@
-//! Stage 3: the game loop, scripted. Edit `projects/guessing_game/src/lib.rs`.
+//! Stage 3: the game loop, scripted.
 
 use guessing_game::play;
 

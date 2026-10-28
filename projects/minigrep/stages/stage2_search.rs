@@ -1,4 +1,4 @@
-//! Stage 2: the search function, test-first. Edit `projects/minigrep/src/lib.rs`.
+//! Stage 2: the search function, test-first.
 
 use minigrep::search;
 

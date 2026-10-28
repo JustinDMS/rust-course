@@ -1,4 +1,4 @@
-//! Stage 1: building a Config. Edit `projects/minigrep/src/lib.rs`.
+//! Stage 1: building a Config.
 
 use minigrep::Config;
 

@@ -1,4 +1,4 @@
-//! Stage 2: comparing and reporting. Edit `projects/guessing_game/src/lib.rs`.
+//! Stage 2: comparing and reporting.
 
 use guessing_game::{compare, feedback};
 use std::cmp::Ordering;

@@ -1,9 +1,18 @@
-//! `course verify`: content CI. Copies the exercise and project crates into a
-//! scratch workspace, checks that every exercise is red as shipped, overlays
-//! the solutions, and checks that every exercise is then green.
+//! `course verify`: content CI. Every exercise must be red as shipped and
+//! green with its solution.
+//!
+//! Two flavours:
+//!
+//! - `verify` copies the exercise and project crates into a scratch
+//!   workspace and runs `cargo test` locally. Fast, works offline.
+//! - `verify --online` posts each exercise to the Rust Playground exactly as
+//!   the site does (one file, tests appended for project stages). Slower,
+//!   but it checks the thing the learner actually runs: crate versions on
+//!   the Playground, no access to files in the repository, and so on.
 
 use crate::content::Content;
-use crate::runner::{self, Status};
+use crate::online;
+use crate::runner::{self, RunOutcome, Status};
 use anyhow::{Context, Result, bail};
 use std::path::{Path, PathBuf};
 
@@ -12,6 +21,105 @@ pub struct Report {
     pub solution_red: Vec<(String, Status, String)>,
     pub total: usize,
 }
+
+impl Report {
+    pub fn ok(&self) -> bool {
+        self.shipped_green.is_empty() && self.solution_red.is_empty()
+    }
+
+    pub fn print(&self) {
+        println!();
+        println!("{} exercises checked", self.total);
+        for id in &self.shipped_green {
+            println!("  !! {id} already passes as shipped");
+        }
+        for (id, status, detail) in &self.solution_red {
+            println!("  !! {id} solution does not pass ({status:?}):");
+            for line in detail.lines() {
+                println!("       {line}");
+            }
+        }
+        if self.ok() {
+            println!("all good");
+        }
+    }
+}
+
+fn selected<'a>(content: &'a Content, only: Option<&str>) -> Result<Vec<&'a crate::content::Exercise>> {
+    let exercises: Vec<_> = content
+        .exercises
+        .values()
+        .filter(|e| only.is_none_or(|o| e.id.starts_with(o)))
+        .collect();
+    if exercises.is_empty() {
+        bail!("no exercises match {only:?}");
+    }
+    Ok(exercises)
+}
+
+fn failure_detail(outcome: &RunOutcome) -> String {
+    // Test failures are reported on stdout; compile errors on stderr.
+    let detail = match outcome.status {
+        Status::Failed | Status::RequirementsUnmet if !outcome.stdout.trim().is_empty() => &outcome.stdout,
+        _ if outcome.stderr.trim().is_empty() => &outcome.stdout,
+        _ => &outcome.stderr,
+    };
+    let detail = detail
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .take(40)
+        .collect::<Vec<_>>()
+        .join("\n");
+    let checks = outcome
+        .checks
+        .iter()
+        .filter(|c| !c.ok)
+        .map(|c| format!("unmet: {}", c.label))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!("{detail}\n{checks}")
+}
+
+// ---------------------------------------------------------------------------
+// Online: through the Playground, as the site does it
+// ---------------------------------------------------------------------------
+
+pub fn verify_online(content: &Content, only: Option<&str>) -> Result<Report> {
+    let exercises = selected(content, only)?;
+    let playground = online::Playground::new();
+    let mut shipped_green = Vec::new();
+    let mut solution_red = Vec::new();
+
+    println!("== Playground: shipped must NOT pass, solution MUST pass ({})", exercises.len());
+    for ex in &exercises {
+        let assembled = online::assemble(ex, &content.root)?;
+        let tests = assembled.tests.as_deref();
+
+        let shipped = online::run(&playground, ex, &assembled.starter, tests)?;
+        let mark = if shipped.passed() { "GREEN (bad)" } else { "red (good)" };
+        println!("  {:<14} shipped  {:<12} {:?} {}ms", ex.id, mark, shipped.status, shipped.duration_ms);
+        if shipped.passed() {
+            shipped_green.push(ex.id.clone());
+        }
+
+        let solved = online::run(&playground, ex, &assembled.solution, tests)?;
+        let mark = if solved.passed() { "green (good)" } else { "RED (bad)" };
+        println!("  {:<14} solution {:<12} {:?} {}ms", "", mark, solved.status, solved.duration_ms);
+        if !solved.passed() {
+            solution_red.push((ex.id.clone(), solved.status, failure_detail(&solved)));
+        }
+    }
+
+    Ok(Report {
+        shipped_green,
+        solution_red,
+        total: exercises.len(),
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Local: cargo test in a scratch workspace
+// ---------------------------------------------------------------------------
 
 pub async fn verify(content: &Content, only: Option<&str>) -> Result<Report> {
     let root = &content.root;
@@ -47,14 +155,7 @@ pub async fn verify(content: &Content, only: Option<&str>) -> Result<Report> {
         ),
     )?;
 
-    let exercises: Vec<_> = content
-        .exercises
-        .values()
-        .filter(|e| only.is_none_or(|o| e.id.starts_with(o)))
-        .collect();
-    if exercises.is_empty() {
-        bail!("no exercises match {only:?}");
-    }
+    let exercises = selected(content, only)?;
 
     println!("== Phase 1: exercises as shipped must NOT pass ({})", exercises.len());
     let mut shipped_green = Vec::new();
@@ -84,9 +185,8 @@ pub async fn verify(content: &Content, only: Option<&str>) -> Result<Report> {
             copy_fresh(&solution, &dest)?;
         }
     }
-    // Some solutions need more than one file (a project's lib.rs + main.rs,
-    // or a module split across files): overlay solutions/<name>/src onto
-    // projects/<name>/src or exercises/<name>/src when present.
+    // A project's solution may span several files: overlay
+    // solutions/<name>/src onto projects/<name>/src when present.
     let solutions_dir = root.join("solutions");
     if solutions_dir.exists() {
         for entry in std::fs::read_dir(&solutions_dir)? {
@@ -111,25 +211,7 @@ pub async fn verify(content: &Content, only: Option<&str>) -> Result<Report> {
         let mark = if outcome.passed() { "green (good)" } else { "RED (bad)" };
         println!("  {:<14} {:<16} {:?} {}ms", ex.id, mark, outcome.status, outcome.duration_ms);
         if !outcome.passed() {
-            let detail = if outcome.stderr.trim().is_empty() {
-                outcome.stdout
-            } else {
-                outcome.stderr
-            };
-            let detail = detail
-                .lines()
-                .filter(|l| !l.trim().is_empty())
-                .take(40)
-                .collect::<Vec<_>>()
-                .join("\n");
-            let checks = outcome
-                .checks
-                .iter()
-                .filter(|c| !c.ok)
-                .map(|c| format!("unmet: {}", c.label))
-                .collect::<Vec<_>>()
-                .join("\n");
-            solution_red.push((ex.id.clone(), outcome.status, format!("{detail}\n{checks}")));
+            solution_red.push((ex.id.clone(), outcome.status, failure_detail(&outcome)));
         }
     }
 

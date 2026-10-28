@@ -4,7 +4,7 @@
 //! yours to implement during chapter 2.
 
 use guessing_game::{compare, feedback, parse_guess};
-use rand::Rng;
+use rand::RngExt;
 use std::cmp::Ordering;
 use std::io;
 

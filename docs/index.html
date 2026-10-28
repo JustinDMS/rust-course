@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rust Course</title>
+<meta name="description" content="An interactive edition of The Rust Programming Language, chapters 1 to 13: lessons, quizzes and exercises that compile on the Rust Playground.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23c2410c'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<!-- CodeMirror 6 for the exercise editor. The `*` prefix makes esm.sh leave
+     dependencies external so that every package shares the one
+     @codemirror/state listed here. If the CDN is unreachable, editor.js
+     falls back to a plain textarea editor. -->
+<script type="importmap">
+{
+  "imports": {
+    "codemirror": "https://esm.sh/*codemirror@6.0.1",
+    "@codemirror/state": "https://esm.sh/@codemirror/state@6",
+    "@codemirror/view": "https://esm.sh/*@codemirror/view@6",
+    "@codemirror/language": "https://esm.sh/*@codemirror/language@6.12.0",
+    "@codemirror/commands": "https://esm.sh/*@codemirror/commands@6",
+    "@codemirror/search": "https://esm.sh/*@codemirror/search@6",
+    "@codemirror/autocomplete": "https://esm.sh/*@codemirror/autocomplete@6",
+    "@codemirror/lint": "https://esm.sh/*@codemirror/lint@6",
+    "@codemirror/lang-rust": "https://esm.sh/*@codemirror/lang-rust@6",
+    "@codemirror/theme-one-dark": "https://esm.sh/*@codemirror/theme-one-dark@6",
+    "@lezer/common": "https://esm.sh/@lezer/common@1",
+    "@lezer/highlight": "https://esm.sh/*@lezer/highlight@1",
+    "@lezer/lr": "https://esm.sh/*@lezer/lr@1",
+    "@lezer/rust": "https://esm.sh/*@lezer/rust@1",
+    "style-mod": "https://esm.sh/style-mod@4",
+    "w3c-keyname": "https://esm.sh/w3c-keyname@2",
+    "crelt": "https://esm.sh/crelt@1"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <header class="side-header">
+      <div class="brand">
+        <span class="brand-mark">R</span>
+        <span class="brand-text">Rust Course</span>
+      </div>
+      <div class="level-box">
+        <div class="level-title" id="level-title">Newcomer</div>
+        <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
+        <div class="xp-text" id="xp-text">0 XP</div>
+      </div>
+    </header>
+    <nav id="chapter-list" aria-label="Chapters"></nav>
+    <footer class="side-footer">
+      <button class="link-btn" id="export-progress" title="Download XP, answers and your code as a JSON file">Export progress</button>
+      <button class="link-btn" id="import-progress" title="Load a progress file exported on another device">Import</button>
+      <button class="link-btn" id="reset-progress">Reset</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </footer>
+  </aside>
+  <main id="content">
+    <div class="loading">Loading the course…</div>
+  </main>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="dialog-root"></div>
+<script src="data/course.js"></script>
+<script src="md.js"></script>
+<script src="hl.js"></script>
+<script type="module" src="editor.js"></script>
+<script defer src="app.js"></script>
+</body>
+</html>

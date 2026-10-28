@@ -1,5 +1,5 @@
 //! Stage 5 (chapter 13): building a Config from an iterator.
-//! Edit `projects/minigrep/src/lib.rs`.
+//!
 
 use minigrep::Config;
 
